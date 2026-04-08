@@ -1,0 +1,164 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        Int      @id @default(autoincrement())
+  email     String   @unique
+  password  String
+  name      String
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  settings  UserSettings?
+  pets      Pet[]
+  vets      Vet[]
+  events    CalendarEvent[]
+
+  @@map("users")
+}
+
+model UserSettings {
+  id                    Int     @id @default(autoincrement())
+  user_id               Int     @unique
+  user                  User    @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  notify_vet_visits     Boolean @default(true)
+  notify_feeding        Boolean @default(true)
+  notify_weekly_report  Boolean @default(false)
+  notify_medication     Boolean @default(true)
+
+  @@map("user_settings")
+}
+
+model Pet {
+  id           Int      @id @default(autoincrement())
+  user_id      Int
+  user         User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  name         String
+  species      String
+  breed        String?
+  gender       String?
+  color        String?
+  microchip    String?
+  bio          String?
+  image_url    String?
+  weight_kg    Float?
+  birthday     String?
+  status       String   @default("Healthy")
+  health_score Int      @default(100)
+  emoji        String   @default("????")
+  created_at   DateTime @default(now())
+  updated_at   DateTime @updatedAt
+
+  health_records    HealthRecord[]
+  medications      Medication[]
+  feeding_schedules FeedingSchedule[]
+  vet_records       VetRecord[]
+  calendar_events   CalendarEvent[]
+  food_alerts       FoodAlert[]
+
+  @@map("pets")
+}
+
+model HealthRecord {
+  id            Int      @id @default(autoincrement())
+  pet_id        Int
+  pet           Pet      @relation(fields: [pet_id], references: [id], onDelete: Cascade)
+  score         Int
+  weight_kg     Float?
+  last_checkup  String?
+  vaccinated    Boolean  @default(false)
+  conditions    String   @default("[]") // JSON string
+  recorded_at   DateTime @default(now())
+
+  @@map("health_records")
+}
+
+model Medication {
+  id              Int      @id @default(autoincrement())
+  pet_id          Int
+  pet             Pet      @relation(fields: [pet_id], references: [id], onDelete: Cascade)
+  name            String
+  frequency       String
+  next_dose_date  String?
+  created_at      DateTime @default(now())
+
+  @@map("medications")
+}
+
+model FeedingSchedule {
+  id            Int      @id @default(autoincrement())
+  pet_id        Int
+  pet           Pet      @relation(fields: [pet_id], references: [id], onDelete: Cascade)
+  meal_type     String
+  time          String
+  food_name     String
+  amount_g      Float
+  schedule_date String   @default("")
+  status        String   @default("Upcoming")
+
+  @@map("feeding_schedules")
+}
+
+model Vet {
+  id         Int      @id @default(autoincrement())
+  user_id    Int
+  user       User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  name       String
+  clinic     String?
+  phone      String?
+  address    String?
+  specialty  String   @default("General")
+
+  records    VetRecord[]
+
+  @@map("vets")
+}
+
+model VetRecord {
+  id         Int      @id @default(autoincrement())
+  pet_id     Int
+  pet        Pet      @relation(fields: [pet_id], references: [id], onDelete: Cascade)
+  vet_id     Int?
+  vet        Vet?     @relation(fields: [vet_id], references: [id], onDelete: SetNull)
+  vet_name   String?
+  date       String
+  type       String
+  notes      String?
+  status     String   @default("Scheduled")
+
+  @@map("vet_records")
+}
+
+model CalendarEvent {
+  id          Int      @id @default(autoincrement())
+  pet_id      Int?
+  pet         Pet?     @relation(fields: [pet_id], references: [id], onDelete: Cascade)
+  user_id     Int
+  user        User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  title       String
+  event_date  String
+  type        String
+  icon_type   String   @default("calendar")
+  created_at  DateTime @default(now())
+
+  @@map("calendar_events")
+}
+
+model FoodAlert {
+  id          Int      @id @default(autoincrement())
+  pet_id      Int
+  pet         Pet      @relation(fields: [pet_id], references: [id], onDelete: Cascade)
+  message     String
+  level       String   @default("info")
+  is_resolved Boolean  @default(false)
+  created_at  DateTime @default(now())
+
+  @@map("food_alerts")
+}
