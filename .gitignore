@@ -1,4 +1,23 @@
-.env
+# Dependencies
 node_modules/
-petstation.db
+dist/
+
+# Prisma
+src/generated/
+*.db
 *.db-journal
+petstation.db
+
+# Environment
+.env
+.env.local
+.env.production
+.npmrc
+
+# Logs
+*.log
+npm-debug.log*
+
+# OS Files
+.DS_Store
+Thumbs.db
