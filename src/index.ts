@@ -23,8 +23,29 @@ app.use((req, _res, next) => {
 });
 
 // 2. CORS
+const allowedOrigins = [
+  process.env.FRONTEND_URL,
+  'http://localhost:8080',
+  'http://localhost:5173',
+  'https://petstation.vercel.app',
+].filter(Boolean) as string[];
+
 app.use(cors({
-  origin: process.env.FRONTEND_URL || 'http://localhost:8080',
+  origin: (origin, callback) => {
+    // Allow requests with no origin (like mobile apps or curl requests)
+    if (!origin) return callback(null, true);
+    
+    const isAllowed = allowedOrigins.includes(origin) || 
+                     origin.endsWith('.vercel.app') || 
+                     origin.includes('localhost');
+    
+    if (isAllowed) {
+      callback(null, true);
+    } else {
+      console.warn(`🚨 CORS blocked origin: ${origin}`);
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
   credentials: true,
 }));
 
@@ -43,7 +64,12 @@ if (process.env.NODE_ENV !== 'production') {
 
 // ─── Health check ─────────────────────────────────────────────────────────────
 app.get('/health', (_req, res) => {
-  res.json({ status: 'ok', timestamp: new Date().toISOString() });
+  res.json({ 
+    status: 'ok', 
+    timestamp: new Date().toISOString(),
+    env: process.env.NODE_ENV || 'development',
+    cors_origin: process.env.FRONTEND_URL || 'not_set'
+  });
 });
 
 // ─── Uncaught Error Protection ──────────────────────────────────────────────
